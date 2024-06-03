@@ -48,20 +48,20 @@ const verifyToken = (req, res, next) => {
   }
 
 //creating Token
-app.post("/jwt", logger, async (req, res) => {
+app.post("/jwt", async (req, res) => {
     const user = req.body;
     console.log("user for token", user);
     const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
 
-    res.cookie("token", token, cookieOptions).send({ success: true });
+    // res.cookie("token", token, cookieOptions).send({ success: true });
 });
 
 //clearing Token
-app.post("/logout", async (req, res) => {
+app.get("/logout", async (req, res) => {
     const user = req.body;
     console.log("logging out", user);
     res
-        .clearCookie("token", { ...cookieOptions, maxAge: 0 })
+        // .clearCookie("token", { ...cookieOptions, maxAge: 0 })
         .send({ success: true });
 });
 
