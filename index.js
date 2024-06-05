@@ -59,7 +59,7 @@ app.post("/jwt", async (req, res) => {
 });
 
 //clearing Token
-app.post("/logout", async (req, res) => {
+app.get("/logout", async (req, res) => {
   const user = req.body;
   console.log("logging out", user);
   res
@@ -98,8 +98,25 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
+
+    // =================================
     // DB Collections Connection
-    const blogsCollection = client.db("mediHouseDB").collection("users");
+    // =================================
+    const usersCollection = client.db("mediHouseDB").collection("users");
+
+
+    // =================================
+    // API Connections
+    // =================================
+
+    // Post users registration data
+    app.post('/users', async (req, res) => {
+      const newUser = req.body;
+      // console.log(newUser);
+      const result = await usersCollection.insertOne(newUser);
+      // console.log(result);
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
