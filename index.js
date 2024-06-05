@@ -109,6 +109,14 @@ async function run() {
     // API Connections
     // =================================
 
+    // Get a specific users' data by email
+    app.get('/users/:email', async (req, res) => {      
+      // data find
+      const mail = req.params?.email;
+      const results = await usersCollection.find({ email: mail }).toArray();
+      res.send(results);
+    });
+
     // Post users registration data
     app.post('/users', async (req, res) => {
       const newUser = req.body;
