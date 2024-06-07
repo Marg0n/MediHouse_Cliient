@@ -15,7 +15,7 @@ const port = process.env.PORT || 5000;
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    // netlify,
+    "https://medihouse.netlify.app",
     // server-side
   ],
   credentials: true,
