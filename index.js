@@ -80,6 +80,7 @@ app.listen(port, () => {
 //connection to mongodb
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pqvcpai.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pqvcpai.mongodb.net/`;
 
 
 
@@ -96,7 +97,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
 
 
     // =================================
@@ -110,10 +111,10 @@ async function run() {
     // =================================
 
     // Get a specific users' data by email
-    app.get('/users/:email', async (req, res) => {      
-      // data find
+    app.get('/users/:email', async (req, res) => {   
       const mail = req.params?.email;
       const results = await usersCollection.find({ email: mail }).toArray();
+      // console.log(results)
       res.send(results);
     });
 
@@ -125,6 +126,23 @@ async function run() {
       // console.log(result);
       res.send(result);
     })
+
+    // Update users registration data by email
+    app.put('/update/:email', async (req, res) => {
+      // console.log(req.params?.email);
+      const mail = req.params?.email;
+      const request = req.body;
+      const query = { email: mail };
+      const options = { upsert: true };
+      const data = {
+        $set: {
+          ...request,
+        }
+      }
+      const result = await usersCollection.updateOne(query, data, options);
+      // console.log(result);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
