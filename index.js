@@ -60,7 +60,7 @@ const verifyToken = (req, res, next) => {
 app.post("/jwt", async (req, res) => {
   const user = req.body;
   console.log("user for token", user);
-  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
 
   res
     // .cookie("token", token, cookieOptions)
@@ -116,20 +116,42 @@ async function run() {
     const usersCollection = client.db("mediHouseDB").collection("users");
 
 
+
+    // =================================
+    // Admin verify 
+    // =================================
+
+    // verify admin access after jwt validation
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const isAdmin = user?.isAdmin === true;
+      if (!isAdmin) {
+        return res.status(403).send({ message: "Admin not found" });
+      }
+
+      next();
+    }
+
+
     // =================================
     // API Connections
     // =================================
 
     // Get all users' data 
-    app.get('/users',verifyToken, async (req, res) => {   
+    app.get('/users', verifyToken,verifyAdmin, async (req, res) => {
       const results = await usersCollection.find().toArray();
       // console.log(results)
       res.send(results);
     });
 
     // Get a specific users' data by email
-    app.get('/users/:email',verifyToken, async (req, res) => {   
+    app.get('/users/:email', verifyToken, async (req, res) => {
       const mail = req.params?.email;
+      if (mail !== req.decoded.email) {
+        res.status(403).send({ message: 'Unauthorized email access....' });
+      }
       const results = await usersCollection.find({ email: mail }).toArray();
       // console.log(results)
       res.send(results);
