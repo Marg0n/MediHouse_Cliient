@@ -27,8 +27,17 @@ app.use(express.json());
 // jwt validation middleware
 const verifyToken = (req, res, next) => {
 
-  const token = req?.cookies?.token;
-  // console.log(token)
+  // console.log('jtw header:',req.headers.authorization)
+
+  // for local storage only
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: 'Unauthorized access!!' });
+  }
+  // validate local storage token
+  const token = req.headers.authorization.split(' ')[1];
+
+  // const token = req?.cookies?.token;
+  // console.log('token',token)
 
   if (!token) {
     return res.status(401).send({ message: 'Unauthorized access...' });
@@ -41,7 +50,7 @@ const verifyToken = (req, res, next) => {
         return res.status(401).send({ message: 'Unauthorized access' });
       }
       // console.log(decoded)
-      req.user = decoded
+      req.decoded = decoded
       next()
     })
   }
@@ -51,11 +60,12 @@ const verifyToken = (req, res, next) => {
 app.post("/jwt", async (req, res) => {
   const user = req.body;
   console.log("user for token", user);
-  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
 
   res
     // .cookie("token", token, cookieOptions)
-    .send({ success: true });
+    // .send({ success: true });
+    .send({ token });
 });
 
 //clearing Token
@@ -110,8 +120,15 @@ async function run() {
     // API Connections
     // =================================
 
+    // Get all users' data 
+    app.get('/users',verifyToken, async (req, res) => {   
+      const results = await usersCollection.find().toArray();
+      // console.log(results)
+      res.send(results);
+    });
+
     // Get a specific users' data by email
-    app.get('/users/:email', async (req, res) => {   
+    app.get('/users/:email',verifyToken, async (req, res) => {   
       const mail = req.params?.email;
       const results = await usersCollection.find({ email: mail }).toArray();
       // console.log(results)
