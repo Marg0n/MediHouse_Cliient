@@ -114,6 +114,7 @@ async function run() {
     // DB Collections Connection
     // =================================
     const usersCollection = client.db("mediHouseDB").collection("users");
+    const testsCollection = client.db("mediHouseDB").collection("tests");
 
 
 
@@ -137,7 +138,7 @@ async function run() {
 
 
     // =================================
-    // API Connections
+    // API Connections for users
     // =================================
 
     // Get all users' data 
@@ -181,19 +182,6 @@ async function run() {
           },
         }
         const results = await usersCollection.updateOne(query, updateDoc);
-    
-        // Update the user's status in the MongoDB collection
-        // const updatedUser = await usersCollection.findOneAndUpdate(
-        //     { _id: ObjectId(id) }, // Find the user by its _id
-        //     { $set: { status } }, // Set the new status
-        //     { returnOriginal: false } // Return the updated document
-        // );
-    
-        // Check if the user was found and updated successfully
-        // if (!updatedUser) {
-        //     return res.status(404).json({ message: 'User not found' });
-        // }
-
 
         // console.log(results)
         res.send(results);
@@ -223,6 +211,20 @@ async function run() {
       // console.log(result);
       res.send(result);
     });
+
+    // =================================
+    // API Connections for tests
+    // =================================
+
+    // Post a test
+    app.post('/addTests', verifyToken, verifyAdmin, async (req, res) => {
+      const newTest = req.body;
+      // console.log(newUser);
+      const result = await testsCollection.insertOne(newTest);
+      // console.log(result);
+      res.send(result);
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
