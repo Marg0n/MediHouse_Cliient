@@ -225,6 +225,13 @@ async function run() {
       res.send(result);
     })
 
+    // Get tests lists
+    app.get('/testsLists', async (req, res) => {
+      const results = await testsCollection.find().toArray();
+      // console.log(results)
+      res.send(results);
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
