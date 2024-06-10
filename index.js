@@ -232,6 +232,14 @@ async function run() {
       res.send(results);
     })
 
+    // Get tests lists
+    app.get('/testsLists/:id', verifyToken, async (req, res) => {
+      const id = req.params?.id;
+      const results = await testsCollection.find({_id: new ObjectId(id)}).toArray();
+      console.log(results)
+      res.send(results);
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
