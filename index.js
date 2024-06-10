@@ -25,19 +25,22 @@ app.use(express.json());
 // app.use(cookieParser());
 
 // jwt validation middleware
-const verifyToken = (req, res, next) => {
+const verifyToken = async(req, res, next) => {
 
   // console.log('jtw header:', req.headers.authorization)
 
+  const initialToken = await req.headers.authorization
+  console.log('jtw header initialToken :::>',initialToken)
+
   // for local storage only
-  if (!req.headers.authorization) {
+  if (!initialToken) {
     return res.status(401).send({ message: 'Unauthorized access!!' });
   }
   // validate local storage token
-  const token = req.headers.authorization.split(' ')[1];
+  const token = await initialToken.split(' ')[1];
 
   // const token = req?.cookies?.token;
-  // console.log('token', token)
+  console.log('token :::>', token)
 
   if (!token) {
     return res.status(401).send({ message: 'Unauthorized access...' });
@@ -232,11 +235,11 @@ async function run() {
       res.send(results);
     })
 
-    // Get tests lists
+    // Get tests details
     app.get('/testsLists/:id', verifyToken, async (req, res) => {
       const id = req.params?.id;
       const results = await testsCollection.find({_id: new ObjectId(id)}).toArray();
-      console.log(results)
+      // console.log(results)
       res.send(results);
     })
 
