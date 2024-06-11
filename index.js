@@ -25,12 +25,12 @@ app.use(express.json());
 // app.use(cookieParser());
 
 // jwt validation middleware
-const verifyToken = async(req, res, next) => {
+const verifyToken = async (req, res, next) => {
 
   // console.log('jtw header:', req.headers.authorization)
 
   const initialToken = await req.headers.authorization
-  console.log('jtw header initialToken :::>',initialToken)
+  // console.log('jtw header initialToken :::>', initialToken)
 
   // for local storage only
   if (!initialToken) {
@@ -40,7 +40,7 @@ const verifyToken = async(req, res, next) => {
   const token = await initialToken.split(' ')[1];
 
   // const token = req?.cookies?.token;
-  console.log('token :::>', token)
+  // console.log('token :::>', token)
 
   if (!token) {
     return res.status(401).send({ message: 'Unauthorized access...' });
@@ -49,7 +49,7 @@ const verifyToken = async(req, res, next) => {
   if (token) {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
       if (err) {
-        console.log(err)
+        console.log('err token :::>', err)
         return res.status(401).send({ message: 'Unauthorized access' });
       }
       // console.log(decoded)
@@ -114,10 +114,11 @@ async function run() {
 
 
     // =================================
-    // DB Collections Connection
+    // DB Collections' Connection
     // =================================
     const usersCollection = client.db("mediHouseDB").collection("users");
     const testsCollection = client.db("mediHouseDB").collection("tests");
+    const bookingsCollection = client.db("mediHouseDB").collection("bookings");
 
 
 
@@ -178,7 +179,7 @@ async function run() {
         const id = req.params?.id; // Extract the user id from the request parameters
         const updateBody = req.body; // Extract the new status from the request body
         // console.log('updateBody -->',updateBody);
-        const query = {_id: new ObjectId(id)}
+        const query = { _id: new ObjectId(id) }
         const updateDoc = {
           $set: {
             status: updateBody.status
@@ -237,21 +238,44 @@ async function run() {
 
     // Get tests lists count for pagination
     app.get('/testsListsCount', async (req, res) => {
-      const counts = await testsCollection.countDocuments();
+      const filter = req.query?.filter
+      const search = req.query?.search
+
+      let query = {
+        test_name: { $regex: search, $options: 'i' },
+      }
+      if (filter) {
+        query.test_date = { $gte: filter }; // Filter dates greater than or equal to the filter date
+      }
+      const counts = await testsCollection.countDocuments(query);
+
       // it provides a number with object form
-      res.send({counts});
+      res.send({ counts });
     })
 
     // Get tests lists count for pagination with page size and page count
     app.get('/testsListPagination', async (req, res) => {
       const size = parseInt(req.query.size)
       const page = parseInt(req.query.page) - 1
-      console.log(size,page);
+      const filter = req.query?.filter
+      const today = req.query?.today
+      const search = req.query?.search
+      // console.log(size,page);
+
+      let query = {
+        test_date: { $gte: today }, // Filter dates greater than or equal to today's date
+        test_name: { $regex: search, $options: 'i' },
+      }
+      if (filter) {
+        query = { ...query, test_date: { $gte: filter } }; // Filter dates greater than or equal to the filter date
+      }
+
       const results = await testsCollection
-      .find()
-      .skip(page * size)
-      .limit(size)
-      .toArray();
+        .find(query)
+        .sort({ test_date: 1 }) // Sort by test_date in ascending order
+        .skip(page * size)
+        .limit(size)
+        .toArray();
 
       res.send(results);
     })
@@ -259,10 +283,52 @@ async function run() {
     // Get tests details
     app.get('/testsLists/:id', verifyToken, async (req, res) => {
       const id = req.params?.id;
-      const results = await testsCollection.find({_id: new ObjectId(id)}).toArray();
+      const results = await testsCollection.find({ _id: new ObjectId(id) }).toArray();
       // console.log(results)
       res.send(results);
     })
+
+
+    // =================================
+    // API Connections for booking tests
+    // =================================
+
+    // Post a booking
+    app.post('/userBookings', verifyToken, async (req, res) => {
+      const booking = req.body;
+      // console.log(booking);
+
+      // check if there is already a booking
+      const query = {
+        testID: booking.testID
+      }
+
+      const alreadyBooked = await bookingsCollection.findOne(query)
+
+      if (alreadyBooked) {
+        return res
+          .status(400)
+          .send("There is already a booking!")
+      }
+
+      const result = await bookingsCollection.insertOne(booking);
+      // console.log(result);
+
+      // update the test slots
+      const updateDoc = {
+        $inc: {
+          test_slots: -1,
+        },
+      }
+
+      const find = { _id: new ObjectId(booking.testID) }
+      const updateSlots = await testsCollection.updateOne(find, updateDoc)
+      // console.log(updateSlots)
+
+      res.send(result);
+    })
+
+    // =================================================================
 
 
     // Send a ping to confirm a successful connection
