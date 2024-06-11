@@ -229,13 +229,6 @@ async function run() {
       res.send(result);
     })
 
-    // Get tests lists
-    app.get('/testsLists', async (req, res) => {
-      const results = await testsCollection.find().toArray();
-      // console.log(results)
-      res.send(results);
-    })
-
     // Get tests lists count for pagination
     app.get('/testsListsCount', async (req, res) => {
       const filter = req.query?.filter
@@ -293,6 +286,39 @@ async function run() {
     // API Connections for booking tests
     // =================================
 
+    // get data for appointments
+    app.get('/appointment/:email', verifyToken, async (req, res) => {
+      const mail = req.params?.email;
+      const results = await bookingsCollection.find({ userMail: mail }).toArray();
+      // console.log(results)
+      res.send(results);
+    })
+
+    // Patch a users' appointment Status by id
+    app.patch('/appointmentStatus/:id', verifyToken, async (req, res) => {
+      try {
+        const id = req.params?.id; // Extract the user id from the request parameters
+        const updateBody = req.body; // Extract the new status from the request body
+        // console.log('updateBody -->',updateBody);
+        const query = { _id: new ObjectId(id) }
+        const updateDoc = {
+          $set: {
+            reportStatus: updateBody.status,
+          },
+        }
+        const results = await bookingsCollection.updateOne(query, updateDoc);
+
+        // console.log(results)
+        res.send(results);
+      }
+      catch (err) {
+        // If an error occurs during execution, catch it here
+        console.error('Error updating user status:', err);
+        // Send an error response to the client
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    });
+
     // Post a booking
     app.post('/userBookings', verifyToken, async (req, res) => {
       const booking = req.body;
@@ -300,6 +326,7 @@ async function run() {
 
       // check if there is already a booking
       const query = {
+        userMail: booking.userMail,
         testID: booking.testID
       }
 
