@@ -63,7 +63,7 @@ const verifyToken = async(req, res, next) => {
 app.post("/jwt", async (req, res) => {
   const user = req.body;
   // console.log("user for token", user);
-  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10h' });
 
   res
     // .cookie("token", token, cookieOptions)
@@ -232,6 +232,27 @@ async function run() {
     app.get('/testsLists', async (req, res) => {
       const results = await testsCollection.find().toArray();
       // console.log(results)
+      res.send(results);
+    })
+
+    // Get tests lists count for pagination
+    app.get('/testsListsCount', async (req, res) => {
+      const counts = await testsCollection.countDocuments();
+      // it provides a number with object form
+      res.send({counts});
+    })
+
+    // Get tests lists count for pagination with page size and page count
+    app.get('/testsListPagination', async (req, res) => {
+      const size = parseInt(req.query.size)
+      const page = parseInt(req.query.page) - 1
+      console.log(size,page);
+      const results = await testsCollection
+      .find()
+      .skip(page * size)
+      .limit(size)
+      .toArray();
+
       res.send(results);
     })
 
