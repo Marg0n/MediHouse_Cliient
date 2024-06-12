@@ -246,6 +246,35 @@ async function run() {
     // API Connections for tests
     // =================================
 
+    // Get all tests' data 
+    app.get('/tests', verifyToken, verifyAdmin, async (req, res) => {
+      const results = await testsCollection.find().toArray();
+      res.send(results);
+    });
+
+    // delete tests' data
+    app.delete('/deleteTests/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params?.id;
+      const result = await testsCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    // Update tests' data by id
+    app.put('/updateTests/:id', async (req, res) => {
+      // console.log(req.params?.email);
+      const id = req.params?.id;
+      const request = req.body;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const data = {
+        $set: {
+          ...request,
+        }
+      }
+      const result = await testsCollection.updateOne(query, data, options);
+      res.send(result);
+    });
+
     // Post a test
     app.post('/addTests', verifyToken, verifyAdmin, async (req, res) => {
       const newTest = req.body;
