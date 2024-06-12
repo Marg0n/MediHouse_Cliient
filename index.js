@@ -347,7 +347,7 @@ async function run() {
       res.send(results);
     })
 
-    // get specific data for appointments for admin statistics verifyToken, verifyAdmin, 
+    // get specific data for appointments for admin statistics 
     app.get('/appointmentAdminStat',verifyToken, verifyAdmin,   async (req, res) => {
       const bookingDetails = await bookingsCollection.find(
         {},
