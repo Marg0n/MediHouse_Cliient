@@ -342,9 +342,29 @@ async function run() {
     // =================================
 
     // get data for appointments
+    app.get('/appointment', verifyToken, verifyAdmin, async (req, res) => {
+      const results = await bookingsCollection.find().toArray();
+      res.send(results);
+    })
+
+    // get data for appointments
     app.get('/appointment/:email', verifyToken, async (req, res) => {
       const mail = req.params?.email;
-      const results = await bookingsCollection.find({ userMail: mail }).toArray();
+      
+      const query = { userMail: mail, reportStatus: { $ne: 'delivered' } };
+
+      const results = await bookingsCollection.find(query).toArray();
+      // console.log(results)
+      res.send(results);
+    })
+
+    // get data for test results
+    app.get('/appointmentResult/:email', verifyToken, async (req, res) => {
+      const mail = req.params?.email;
+      
+      const query = { userMail: mail, reportStatus: { $eq: 'delivered' } };
+
+      const results = await bookingsCollection.find(query).toArray();
       // console.log(results)
       res.send(results);
     })
