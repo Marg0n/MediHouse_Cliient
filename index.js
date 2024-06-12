@@ -198,7 +198,7 @@ async function run() {
         res.status(500).json({ message: 'Internal server error' });
       }
     });
-    
+
     // Patch a users' data by id
     app.patch('/update_user/:id', verifyToken, verifyAdmin, async (req, res) => {
       try {
@@ -381,10 +381,23 @@ async function run() {
       res.send(result);
     })
 
-    
+
     // =================================
     // API Connections for banners
     // =================================
+
+    // Get all banners' data 
+    app.get('/banners', verifyToken, verifyAdmin, async (req, res) => {
+      const results = await bannersCollection.find().toArray();
+      res.send(results);
+    });
+
+    // get data for banners by id
+    app.get('/banners/:id', verifyToken, async (req, res) => {
+      const id = req.params?.id;
+      const results = await bannersCollection.find({ _id: new ObjectId(id) }).toArray();
+      res.send(results);
+    })
 
     // Post banners data
     app.post('/banners', verifyToken, verifyAdmin, async (req, res) => {
@@ -392,6 +405,49 @@ async function run() {
       const result = await bannersCollection.insertOne(banners);
       res.send(result);
     })
+
+    // Patch a banners' data by id
+    app.patch('/updateBanner/:id', verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        const id = req.params?.id; // Extract the user id from the request parameters
+        const updateBody = req.body; // Extract the new status from the request body
+        // console.log('updateBody -->',updateBody);
+
+        // Check if the new status is true
+        if (updateBody.status) {
+          // Set isActive to false for all other banners
+          await bannersCollection.updateMany(
+            { _id: { $ne: new ObjectId(id) } },
+            { $set: { isActive: false } }
+          );
+        }
+
+        // Update the specific banner's status
+        const query = { _id: new ObjectId(id) }
+        const updateDoc = {
+          $set: {
+            isActive: updateBody.status
+          },
+        }
+        const results = await bannersCollection.updateOne(query, updateDoc);
+
+        // console.log(results)
+        res.send(results);
+      }
+      catch (err) {
+        // If an error occurs during execution, catch it here
+        console.error('Error updating user status:', err);
+        // Send an error response to the client
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    });
+
+    // delete banner data
+    app.delete('/deleteBanner/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params?.id;
+      const result = await bannersCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
 
     // =================================================================
 
