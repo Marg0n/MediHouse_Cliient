@@ -347,7 +347,7 @@ async function run() {
       res.send(results);
     })
 
-    // get data for appointments
+    // get data for appointments by mail
     app.get('/appointment/:email', verifyToken, async (req, res) => {
       const mail = req.params?.email;
       
@@ -358,7 +358,7 @@ async function run() {
       res.send(results);
     })
 
-    // get data for test results
+    // get data for test results by mail
     app.get('/appointmentResult/:email', verifyToken, async (req, res) => {
       const mail = req.params?.email;
       
