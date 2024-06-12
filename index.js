@@ -119,6 +119,7 @@ async function run() {
     const usersCollection = client.db("mediHouseDB").collection("users");
     const testsCollection = client.db("mediHouseDB").collection("tests");
     const bookingsCollection = client.db("mediHouseDB").collection("bookings");
+    const bannersCollection = client.db("mediHouseDB").collection("banners");
 
 
 
@@ -377,6 +378,18 @@ async function run() {
       const updateSlots = await testsCollection.updateOne(find, updateDoc)
       // console.log(updateSlots)
 
+      res.send(result);
+    })
+
+    
+    // =================================
+    // API Connections for banners
+    // =================================
+
+    // Post banners data
+    app.post('/banners', verifyToken, verifyAdmin, async (req, res) => {
+      const banners = req.body;
+      const result = await bannersCollection.insertOne(banners);
       res.send(result);
     })
 
