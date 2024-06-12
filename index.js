@@ -247,7 +247,7 @@ async function run() {
     // =================================
 
     // Get all tests' data 
-    app.get('/tests', verifyToken, verifyAdmin, async (req, res) => {
+    app.get('/tests', verifyToken, async (req, res) => {
       const results = await testsCollection.find().toArray();
       res.send(results);
     });
@@ -537,9 +537,14 @@ async function run() {
     // API Connections for banners
     // =================================
 
-    // Get all banners' data 
-    app.get('/banners', verifyToken, verifyAdmin, async (req, res) => {
-      const results = await bannersCollection.find().toArray();
+    // Get banners' data is active true
+    app.get('/banners',  async (req, res) => {
+      const results = await bannersCollection.find({ isActive: true }).toArray();
+      res.send(results);
+    });
+    // Get banners' data is active false
+    app.get('/bannersSlider',  async (req, res) => {
+      const results = await bannersCollection.find({ isActive: false }).toArray();
       res.send(results);
     });
 
