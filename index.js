@@ -15,6 +15,7 @@ const port = process.env.PORT || 5000;
 app.use(cors({
   origin: [
     'http://localhost:5173',
+    'http://localhost:5174',
     "https://medihouse.netlify.app",
     // server-side
   ],
@@ -247,7 +248,7 @@ async function run() {
     // =================================
 
     // Get all tests' data 
-    app.get('/tests', verifyToken, async (req, res) => {
+    app.get('/tests', async (req, res) => {
       const results = await testsCollection.find().toArray();
       res.send(results);
     });
