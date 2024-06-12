@@ -173,6 +173,31 @@ async function run() {
       res.send(result);
     })
 
+    // Patch a users' admin role by id
+    app.patch('/adminRole/:id', verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        const id = req.params?.id; // Extract the user id from the request parameters
+        const updateBody = req.body; // Extract the new status from the request body
+        // console.log('updateBody -->',updateBody);
+        const query = { _id: new ObjectId(id) }
+        const updateDoc = {
+          $set: {
+            isAdmin: updateBody.status
+          },
+        }
+        const results = await usersCollection.updateOne(query, updateDoc);
+
+        // console.log(results)
+        res.send(results);
+      }
+      catch (err) {
+        // If an error occurs during execution, catch it here
+        console.error('Error updating user status:', err);
+        // Send an error response to the client
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    });
+    
     // Patch a users' data by id
     app.patch('/update_user/:id', verifyToken, verifyAdmin, async (req, res) => {
       try {
