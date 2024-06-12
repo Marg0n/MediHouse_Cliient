@@ -347,11 +347,16 @@ async function run() {
       res.send(results);
     })
 
-    // get data for appointments by mail
+    // get data for appointments by mail Filter by appointmentsDate
     app.get('/appointment/:email', verifyToken, async (req, res) => {
       const mail = req.params?.email;
-      
-      const query = { userMail: mail, reportStatus: { $ne: 'delivered' } };
+      const currentDate = new Date().toISOString().split('T')[0]; // Get the current date in 'YYYY-MM-DD' format  
+
+      const query = {
+        userMail: mail,
+        appointmentsDate: { $gte: currentDate }, // Filter by appointmentsDate greater than or equal to the current date
+        reportStatus: { $ne: 'delivered' } // Exclude 'delivered' status
+      };
 
       const results = await bookingsCollection.find(query).toArray();
       // console.log(results)
@@ -361,7 +366,7 @@ async function run() {
     // get data for test results by mail
     app.get('/appointmentResult/:email', verifyToken, async (req, res) => {
       const mail = req.params?.email;
-      
+
       const query = { userMail: mail, reportStatus: { $eq: 'delivered' } };
 
       const results = await bookingsCollection.find(query).toArray();
@@ -429,6 +434,24 @@ async function run() {
 
       res.send(result);
     })
+
+    // total price regarding status
+    app.get('/appointments/totalPrice', verifyToken, async (req, res) => {
+      try {
+        const results = await bookingsCollection.aggregate([
+          { $group: { _id: null, totalPrice: { $sum: "$testPrice" } } }
+        ]).toArray();
+
+        // If there are no results, default to 0
+        const totalPrice = results.length > 0 ? results[0].totalPrice : 0;
+
+        res.send({ totalPrice });
+      } catch (err) {
+        console.error('Error calculating total price:', err);
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    });
+
 
 
     // =================================
