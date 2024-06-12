@@ -347,6 +347,85 @@ async function run() {
       res.send(results);
     })
 
+    // get specific data for appointments for admin statistics verifyToken, verifyAdmin, 
+    app.get('/appointmentAdminStat',verifyToken, verifyAdmin,   async (req, res) => {
+      const bookingDetails = await bookingsCollection.find(
+        {},
+        {
+          projection:{
+            testPrice: 1,
+            appointmentsDate: 1,
+            reportStatus: 1,
+          },
+        },
+      ).toArray();
+
+      const totalUsers = await usersCollection.countDocuments()
+      const totalBanners = await bannersCollection.countDocuments()
+      const totalTests = await testsCollection.countDocuments()
+      const totalPrice = bookingDetails.reduce((sum, booking) => sum + booking.testPrice ,0)
+
+      const chartData = bookingDetails.map( booking => {
+        const day = new Date(booking.appointmentsDate).getDate();
+        const month = new Date(booking.appointmentsDate).getMonth()+1;
+        const year = new Date(booking.appointmentsDate).getFullYear();
+        const date = day + "/" + month + "/" + year
+
+        const data = [date, booking?.testPrice]
+
+        return data
+      })
+
+      // const chartDataStatus = bookingDetails.map( booking => {
+      //   const day = new Date(booking.appointmentsDate).getDate();
+      //   const month = new Date(booking.appointmentsDate).getMonth()+1;
+      //   const year = new Date(booking.appointmentsDate).getFullYear();
+      //   const date = day + "/" + month + "/" + year
+
+      //   const stat = [date, booking?.reportStatus]
+
+      //   return stat
+      // })    
+
+      // adding date and sale to charts' 0 index
+      // chartData.splice(0,0,['Date', 'Sales'])
+      chartData.unshift(['Date', 'Sales'])
+      // chartDataStatus.unshift(['Date', 'Status'])
+
+      const statusCounts = {};
+      bookingDetails.forEach(booking => {
+        const day = new Date(booking.appointmentsDate).getDate();
+        const month = new Date(booking.appointmentsDate).getMonth() + 1;
+        const year = new Date(booking.appointmentsDate).getFullYear();
+        const date = day + "/" + month + "/" + year;
+  
+        if (!statusCounts[date]) {
+          statusCounts[date] = { pending: 0, delivered: 0, canceled: 0 };
+        }
+  
+        statusCounts[date][booking.reportStatus]++;
+      });
+  
+      const uniqueDates = Object.keys(statusCounts);
+      const chartData2 = [['Date', 'Pending', 'Delivered', 'Canceled']];
+  
+      uniqueDates.forEach(date => {
+        const { pending, delivered, canceled } = statusCounts[date];
+        chartData2.push([date, pending, delivered, canceled]);
+      });
+
+      res.send({
+        totalUsers,
+        totalBanners,
+        totalTests,
+        totalBooking: bookingDetails.length, 
+        totalPrice,
+        chartData,
+        chartData2
+        // chartDataStatus
+      });
+    })
+
     // get data for appointments by mail Filter by appointmentsDate
     app.get('/appointment/:email', verifyToken, async (req, res) => {
       const mail = req.params?.email;
