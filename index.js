@@ -8,6 +8,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 //config
 require('dotenv').config();
 const app = express();
+// This is stripe test secret API key.
+const stripe = require("stripe")(process.env.STRIPE_API_KEY_SERVER);
 const port = process.env.PORT || 5000;
 
 
@@ -141,6 +143,40 @@ async function run() {
 
       next();
     }
+
+    // =================================
+    // Stripe payment connection
+    // =================================
+
+    app.post("/create-payment-intent", verifyToken, async (req, res) => {
+      const  {price} = req.body;
+      // console.log(price)
+      const amounts = parseFloat(price * 100)
+      // console.log(amounts)
+
+      // return if...
+      // if (amounts <= 0) return
+
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        // amount: calculateOrderAmount(amounts),
+        amount: amounts,
+        currency: "usd",
+        payment_method_types: [
+          "card",
+        ],
+        // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default. it cannot be used with 'payment_method_types' parameter
+        // automatic_payment_methods: {
+        //   enabled: true,
+        // },
+      });
+
+      // console.log(paymentIntent)
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
 
     // =================================
@@ -349,11 +385,11 @@ async function run() {
     })
 
     // get specific data for appointments for admin statistics 
-    app.get('/appointmentAdminStat',verifyToken, verifyAdmin,   async (req, res) => {
+    app.get('/appointmentAdminStat', verifyToken, verifyAdmin, async (req, res) => {
       const bookingDetails = await bookingsCollection.find(
         {},
         {
-          projection:{
+          projection: {
             testPrice: 1,
             appointmentsDate: 1,
             reportStatus: 1,
@@ -364,11 +400,11 @@ async function run() {
       const totalUsers = await usersCollection.countDocuments()
       const totalBanners = await bannersCollection.countDocuments()
       const totalTests = await testsCollection.countDocuments()
-      const totalPrice = bookingDetails.reduce((sum, booking) => sum + booking.testPrice ,0)
+      const totalPrice = bookingDetails.reduce((sum, booking) => sum + booking.testPrice, 0)
 
-      const chartData = bookingDetails.map( booking => {
+      const chartData = bookingDetails.map(booking => {
         const day = new Date(booking.appointmentsDate).getDate();
-        const month = new Date(booking.appointmentsDate).getMonth()+1;
+        const month = new Date(booking.appointmentsDate).getMonth() + 1;
         const year = new Date(booking.appointmentsDate).getFullYear();
         const date = day + "/" + month + "/" + year
 
@@ -399,17 +435,17 @@ async function run() {
         const month = new Date(booking.appointmentsDate).getMonth() + 1;
         const year = new Date(booking.appointmentsDate).getFullYear();
         const date = day + "/" + month + "/" + year;
-  
+
         if (!statusCounts[date]) {
           statusCounts[date] = { pending: 0, delivered: 0, canceled: 0 };
         }
-  
+
         statusCounts[date][booking.reportStatus]++;
       });
-  
+
       const uniqueDates = Object.keys(statusCounts);
       const chartData2 = [['Date', 'Pending', 'Delivered', 'Canceled']];
-  
+
       uniqueDates.forEach(date => {
         const { pending, delivered, canceled } = statusCounts[date];
         chartData2.push([date, pending, delivered, canceled]);
@@ -419,7 +455,7 @@ async function run() {
         totalUsers,
         totalBanners,
         totalTests,
-        totalBooking: bookingDetails.length, 
+        totalBooking: bookingDetails.length,
         totalPrice,
         chartData,
         chartData2
@@ -487,7 +523,8 @@ async function run() {
       // check if there is already a booking
       const query = {
         userMail: booking.userMail,
-        testID: booking.testID
+        testID: booking.testID,
+        reportStatus: { $ne: 'canceled' },
       }
 
       const alreadyBooked = await bookingsCollection.findOne(query)
@@ -538,13 +575,19 @@ async function run() {
     // API Connections for banners
     // =================================
 
+    // Get banners' data i
+    app.get('/allBanners', async (req, res) => {
+      const results = await bannersCollection.find().toArray();
+      res.send(results);
+    });
+
     // Get banners' data is active true
-    app.get('/banners',  async (req, res) => {
+    app.get('/banners', async (req, res) => {
       const results = await bannersCollection.find({ isActive: true }).toArray();
       res.send(results);
     });
     // Get banners' data is active false
-    app.get('/bannersSlider',  async (req, res) => {
+    app.get('/bannersSlider', async (req, res) => {
       const results = await bannersCollection.find({ isActive: false }).toArray();
       res.send(results);
     });

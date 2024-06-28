@@ -11,3 +11,4 @@ Resources:
 - [Express](https://expressjs.com)
 - [MongoDB](https://cloud.mongodb.com)
 - [JWT](https://jwt.io/libraries?language=Node.js)
+- [Stripe](https://docs.stripe.com/checkout/quickstart?client=react&lang=node)
