@@ -1,6 +1,6 @@
-# Medi House
+# Medi House Server
 
-A robust Diagnostic Center Management System, a full-stack web application that effectively manages appointments, patient records, test results, and administrative tasks for a diagnostic center.
+Server side of A robust Diagnostic Center Management System, a full-stack web application that effectively manages appointments, patient records, test results, and administrative tasks for a diagnostic center.
 
 Live site:
 
