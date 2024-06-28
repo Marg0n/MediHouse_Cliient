@@ -4,7 +4,7 @@ Server side of A robust Diagnostic Center Management System, a full-stack web ap
 
 Live site:
 
-- [Live Site]()
+- [Live Site](https://medihouse.netlify.app)
 
 Resources:
 
